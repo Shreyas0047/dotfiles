@@ -86,6 +86,25 @@ def hypr_json(*args):
 
 
 def focused_monitor():
+    if os.environ.get('NIRI_SOCKET'):
+        try:
+            result = subprocess.run(['niri', 'msg', '--json', 'focused-output'], check=True,
+                                    capture_output=True, text=True, timeout=2)
+            data = json.loads(result.stdout)
+            if isinstance(data, dict):
+                logical = data.get('logical') or {}
+                return {
+                    'name': data.get('name', ''),
+                    'scale': logical.get('scale', 1.0) if isinstance(logical, dict) else 1.0,
+                    'width': logical.get('width', 0) if isinstance(logical, dict) else 0,
+                    'height': logical.get('height', 0) if isinstance(logical, dict) else 0,
+                    'x': logical.get('x', 0) if isinstance(logical, dict) else 0,
+                    'y': logical.get('y', 0) if isinstance(logical, dict) else 0,
+                    'focused': True,
+                    'disabled': False
+                }
+        except (OSError, subprocess.SubprocessError, ValueError):
+            pass
     monitors = hypr_json('monitors')
     if not isinstance(monitors, list):
         return None

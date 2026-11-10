@@ -28,7 +28,25 @@ def main():
     os.umask(0o077)
     if a.geometry and not re.fullmatch(r'-?\d+,-?\d+ [1-9]\d*x[1-9]\d*', a.geometry):
         p.error(tr('recording.errors.invalidArea'))
-    monitors = json.loads(subprocess.run(['hyprctl', '-j', 'monitors'], capture_output=True, text=True, check=True, timeout=10).stdout)
+    if os.environ.get('NIRI_SOCKET'):
+        try:
+            out_data = json.loads(subprocess.run(['niri', 'msg', '--json', 'outputs'], capture_output=True, text=True, check=True, timeout=10).stdout)
+            monitors = []
+            for name, out in out_data.items():
+                logical = out.get('logical') or {}
+                monitors.append({
+                    'name': name,
+                    'scale': logical.get('scale', 1.0) if isinstance(logical, dict) else 1.0,
+                    'width': logical.get('width', 0) if isinstance(logical, dict) else 0,
+                    'height': logical.get('height', 0) if isinstance(logical, dict) else 0,
+                    'x': logical.get('x', 0) if isinstance(logical, dict) else 0,
+                    'y': logical.get('y', 0) if isinstance(logical, dict) else 0,
+                    'transform': 0
+                })
+        except (OSError, ValueError, subprocess.SubprocessError):
+            monitors = []
+    else:
+        monitors = json.loads(subprocess.run(['hyprctl', '-j', 'monitors'], capture_output=True, text=True, check=True, timeout=10).stdout)
     output = next((m for m in monitors if m['name'] == a.output), None)
     if output is None:
         p.error(tr('recording.errors.displayUnavailable'))

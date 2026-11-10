@@ -66,6 +66,16 @@ Operations Settings starts run detached, so a closed panel or a shell restart do
 
 `services/Job.qml` starts one and follows it, reading `jobs.py status NAME` when the file changes and every 2 s while it runs.
 
+## Compositor abstraction
+
+`services/Compositor.qml` is a singleton router providing a unified interface across compositors (`Hyprland`, `Niri`, and a headless `Null` fallback). It detects the active compositor via environment variables (`NIRI_SOCKET` or `HYPRLAND_INSTANCE_SIGNATURE`) and dynamically loads the matching backend from `services/compositors/`:
+
+- `services/compositors/HyprlandBackend.qml`: wraps `Quickshell.Hyprland`, maintaining full compatibility with existing Hyprland setups.
+- `services/compositors/NiriBackend.qml`: implements the compositor interface using `Quickshell.Niri._Ipc` (event-driven) and `niri msg action` dispatches.
+- `services/compositors/NullBackend.qml`: fallback backend for headless tests and unsupported environments.
+
+The abstraction normalizes window objects (opaque `id`, `title`, `appId`, `workspaceId`, `monitorName`, `activate()`, `close()`), workspace models (`WorkspaceModel.fromHyprland` and `WorkspaceModel.fromNiri`), monitors, capabilities, and events (`configReloaded`, `monitorsChanged`, `screencastChanged`). UI components interact only with `Compositor` rather than importing compositor-specific singletons directly.
+
 ## Compositor plugins
 
 Hyprspace, Hyprgrass, Hyprglass and HyprCapture are built by hyprpm from the pinned packaging in `scripts/hyprpm/`, which patches Hyprgrass so one finger works as the pointer on apps that ignore touch (`touch_as_pointer`; holding gesture touches back is upstream). `config/plugins.lua` guards every block (`local plugins = hl.plugin or {}`; `if plugins.X then … end`) so `--verify-config` and plugin-less startup work. Actions that need a plugin (screenshots) check `hl.plugin` at press time because plugins load after `hyprland.start`. `desktop-plugins reload` loads them only when they were built from the current packaging (`scripts/hyprpm/bundle.py` digest) for the installed Hyprland; otherwise, at startup with nothing loaded, it writes `{"wanted": …}` to `~/.local/state/dotfiles/plugin-rebuild.json`, or after an unverified compositor update it leaves them off. `services/Plugins.qml` watches that file: once the polkit agent is registered, it starts `plugins.py rebuild` detached. The rebuild holds a lock, runs `install-hypr-plugins.py` through `privileged.py`, writes its log next to the state, and records the result in the same file. It skips the prompt when nothing needs doing. Settings → System → Plugins (`panels/system/PluginsView.qml`) reads `plugins.py status` and cleans the build cache with `plugins.py clear-cache old|all`.

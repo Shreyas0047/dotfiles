@@ -177,8 +177,8 @@ ColumnLayout {
                         value: root.about.kernel ?? ""
                     }
                     Fact {
-                        label: "Hyprland"
-                        value: root.about.hyprland ?? ""
+                        label: Compositor.isNiri ? "Niri" : "Hyprland"
+                        value: Compositor.isNiri ? (root.about.niri ?? "") : (root.about.hyprland ?? "")
                     }
                     Fact {
                         label: "Quickshell"

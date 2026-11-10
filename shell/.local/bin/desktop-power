@@ -32,10 +32,19 @@ case "${1:-}" in
 import json, sys
 area = json.load(sys.stdin).get("keyboard", {}).get("area") or []
 print(area[0] + " " + str(area[4]) if len(area) == 5 else "")' 2>/dev/null || true)
-            scale=$(timeout 1 hyprctl -j monitors 2>/dev/null | python3 -c '
+            scale=1
+            if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+                scale=$(timeout 1 hyprctl -j monitors 2>/dev/null | python3 -c '
 import json, sys
 name = sys.argv[1]
 print(next((m["scale"] for m in json.load(sys.stdin) if m["name"] == name), 1))' "${keyboard%% *}" 2>/dev/null || echo 1)
+            elif [[ -n "${NIRI_SOCKET:-}" ]]; then
+                scale=$(timeout 1 niri msg --json outputs 2>/dev/null | python3 -c '
+import json, sys
+name = sys.argv[1]
+outputs = json.load(sys.stdin)
+print(outputs.get(name, {}).get("logical", {}).get("scale", 1))' "${keyboard%% *}" 2>/dev/null || echo 1)
+            fi
             # A failure here keeps the themed config rather than aborting the lock.
             if python3 - "$themed" "$tablet" "${keyboard#* }" "${scale:-1}" <<'PY'
 import re
@@ -94,7 +103,13 @@ PY
         # Its before_sleep_cmd also covers lid close and externally requested sleep.
         exec systemctl suspend
         ;;
-    logout) exec hyprctl dispatch 'hl.dsp.exit()' ;;
+    logout)
+        if [[ -n "${NIRI_SOCKET:-}" ]]; then
+            exec niri msg action quit --skip-confirmation
+        else
+            exec hyprctl dispatch 'hl.dsp.exit()'
+        fi
+        ;;
     reboot|poweroff) exec systemctl "$1" ;;
     *) message 'session.errors.usage' >&2; exit 2 ;;
 esac

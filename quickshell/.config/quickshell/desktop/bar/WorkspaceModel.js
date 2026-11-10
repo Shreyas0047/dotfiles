@@ -17,6 +17,39 @@ function fromHyprland(hyprland, minimum) {
   );
 }
 
+// The slots of every monitor from Niri's workspaces and outputs.
+function fromNiri(workspaces, outputs, minimum) {
+  const result = {};
+  const used = new Set((workspaces || []).map((w) => w.id));
+  const names = outputs.map((o) => o.name).sort();
+  for (const name of names) {
+    const monWorkspaces = (workspaces || [])
+      .filter((w) => (w.output ?? "") === name)
+      .sort((a, b) => (a.idx ?? a.id) - (b.idx ?? b.id));
+    result[name] = monWorkspaces.map((w) => ({
+      id: w.id,
+      idx: w.idx,
+      name: w.name || "",
+      count: w.occupied ? 1 : (w.count ?? 0),
+      urgent: !!w.urgent,
+      active: !!w.active,
+    }));
+    let next = 1;
+    while (result[name].length < Math.max(2, Math.min(10, minimum || 2))) {
+      while (used.has(next)) ++next;
+      result[name].push({
+        id: next,
+        idx: result[name].length + 1,
+        count: 0,
+        urgent: false,
+        active: false,
+      });
+      used.add(next);
+    }
+  }
+  return result;
+}
+
 function build(workspaces, monitors, minimum) {
   const result = {};
   const used = new Set(workspaces.filter((w) => w.id > 0).map((w) => w.id));

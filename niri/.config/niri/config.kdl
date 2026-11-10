@@ -1,0 +1,142 @@
+// Niri configuration for Quickshell desktop
+input {
+    keyboard {
+        xkb {
+        }
+        numlock
+    }
+    touchpad {
+        tap
+        natural-scroll
+    }
+}
+
+layout {
+    gaps 16
+    center-focused-column "never"
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+    focus-ring {
+        width 2
+        active-color "#7fc8ff"
+        inactive-color "#505050"
+    }
+    shadow {
+        softness 30
+        spread 5
+        offset x=0 y=5
+        color "#0007"
+    }
+}
+
+spawn-at-startup "desktop-session"
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+prefer-no-csd
+
+layer-rule {
+    match namespace="^desktop-overlay$"
+    shadow {
+        off
+    }
+}
+
+layer-rule {
+    match namespace="^desktop-bar$"
+    shadow {
+        off
+    }
+}
+
+layer-rule {
+    match namespace="^desktop-dock$"
+    shadow {
+        off
+    }
+}
+
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+binds {
+    Mod+Return { spawn "kitty"; }
+    Mod+Space { spawn "desktop-shell" "toggle" "launcher"; }
+    Mod+Shift+C { spawn "desktop-shell" "toggle" "controls"; }
+    Mod+Shift+N { spawn "desktop-shell" "toggle" "notifications"; }
+    Mod+Shift+E { spawn "desktop-shell" "toggle" "network"; }
+    Mod+Shift+V { spawn "desktop-shell" "toggle" "audio"; }
+    Mod+Shift+B { spawn "desktop-shell" "toggle" "battery"; }
+    Mod+Shift+D { spawn "desktop-shell" "toggle" "calendar"; }
+    Mod+Shift+H { spawn "desktop-shell" "toggle" "hints"; }
+    Mod+Period { spawn "desktop-shell" "toggle" "emoji"; }
+    Mod+Ctrl+T { spawn "desktop-shell" "toggle" "theming"; }
+    Mod+I { spawn "desktop-shell" "toggle" "settings"; }
+    Mod+Shift+Q { spawn "desktop-shell" "toggle" "power"; }
+    Mod+D { spawn "desktop-shell" "dock" "toggle"; }
+    Mod+Ctrl+C { spawn "desktop-shell" "toggle" "clipboard"; }
+    Mod+Ctrl+R { spawn "desktop-shell" "toggle" "recording"; }
+    Mod+Ctrl+N { spawn "desktop-shell" "dnd" "toggle"; }
+    Mod+Ctrl+F { spawn "desktop-shell" "focus" "toggle"; }
+    Mod+Ctrl+K { spawn "desktop-shell" "keep-awake" "toggle"; }
+    Mod+L { spawn "desktop-power" "lock"; }
+    Mod+A { spawn "desktop-ai"; }
+    Mod+Ctrl+W { spawn "desktop-wallpaper" "--next"; }
+    Mod+Shift+W { spawn "desktop-wallpaper"; }
+    Mod+Shift+P { spawn "desktop-color"; }
+
+    Mod+Q { close-window; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+V { toggle-window-floating; }
+    Mod+Tab { toggle-overview; }
+
+    Mod+Left { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up { focus-window-up; }
+    Mod+Down { focus-window-down; }
+
+    Mod+Shift+Left { move-column-left; }
+    Mod+Shift+Right { move-column-right; }
+    Mod+Shift+Up { move-window-up; }
+    Mod+Shift+Down { move-window-down; }
+
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+
+    Mod+Shift+1 { move-window-to-workspace 1; }
+    Mod+Shift+2 { move-window-to-workspace 2; }
+    Mod+Shift+3 { move-window-to-workspace 3; }
+    Mod+Shift+4 { move-window-to-workspace 4; }
+    Mod+Shift+5 { move-window-to-workspace 5; }
+    Mod+Shift+6 { move-window-to-workspace 6; }
+    Mod+Shift+7 { move-window-to-workspace 7; }
+    Mod+Shift+8 { move-window-to-workspace 8; }
+    Mod+Shift+9 { move-window-to-workspace 9; }
+
+    XF86AudioPlay allow-when-locked=true { spawn "desktop-shell" "media" "play-pause"; }
+    XF86AudioPause allow-when-locked=true { spawn "desktop-shell" "media" "pause"; }
+    XF86AudioNext allow-when-locked=true { spawn "desktop-shell" "media" "next"; }
+    XF86AudioPrev allow-when-locked=true { spawn "desktop-shell" "media" "previous"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "-l" "1" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioMicMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%+"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "5%-"; }
+    XF86Sleep allow-when-locked=true { spawn "desktop-power" "suspend"; }
+}

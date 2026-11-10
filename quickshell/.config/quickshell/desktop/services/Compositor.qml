@@ -116,6 +116,8 @@ Singleton {
         source: {
             if (root.isHyprland)
                 return "compositors/HyprlandBackend.qml";
+            if (root.isNiri)
+                return "compositors/NiriBackend.qml";
             return "compositors/NullBackend.qml";
         }
     }

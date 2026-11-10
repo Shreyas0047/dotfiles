@@ -67,6 +67,11 @@ def hyprland():
     return str(version.get('tag') or version.get('version') or '').lstrip('v')
 
 
+def niri():
+    found = re.search(r'(\d+\.\d+(?:\.\d+)?)', run(['niri', 'version']))
+    return found[1] if found else ''
+
+
 def quickshell():
     # "quickshell 0.3.0, revision …": the version number only.
     found = re.search(r'(\d+\.\d+(?:\.\d+)?)', run(['qs', '--version']))
@@ -90,6 +95,7 @@ def about():
         'processor': processor(),
         'memory': memory(),
         'hyprland': hyprland() if os.environ.get('HYPRLAND_INSTANCE_SIGNATURE') else '',
+        'niri': niri() if os.environ.get('NIRI_SOCKET') else '',
         'quickshell': quickshell(),
         'repository': repository(),
     }

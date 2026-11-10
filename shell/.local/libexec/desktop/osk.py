@@ -84,6 +84,15 @@ class Xkb:
 
 
 def layout():
+    if os.environ.get('NIRI_SOCKET'):
+        try:
+            data = json.loads(subprocess.check_output(['niri', 'msg', '--json', 'keyboard-layouts'], text=True, timeout=5))
+            names = data.get('names', [])
+            idx = data.get('current_idx', 0)
+            if names and 0 <= idx < len(names):
+                return names[idx], '', ''
+        except (OSError, ValueError, subprocess.SubprocessError):
+            pass
     values = []
     for option in ('input:kb_layout', 'input:kb_variant', 'input:kb_options'):
         try:

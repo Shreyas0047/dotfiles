@@ -64,4 +64,34 @@ TestCase {
     function test_scrollWithoutANewIdStaysOnTheLastSlot() {
         compare(WorkspaceModel.scrollTarget([slot(1, 1), slot(2, 1)], 2, 1, -1), -1);
     }
+
+    function test_fromNiriBuildsSlotsPerMonitor() {
+        const workspaces = [
+            { id: 10, idx: 1, name: "main", output: "eDP-1", occupied: true, urgent: false, active: true },
+            { id: 20, idx: 2, name: "", output: "eDP-1", occupied: false, urgent: false, active: false },
+            { id: 30, idx: 1, name: "web", output: "DP-1", occupied: true, urgent: true, active: true }
+        ];
+        const outputs = [{ name: "eDP-1" }, { name: "DP-1" }];
+        const slots = WorkspaceModel.fromNiri(workspaces, outputs, 2);
+        compare(slots["eDP-1"].length, 2);
+        compare(slots["eDP-1"][0].id, 10);
+        compare(slots["eDP-1"][0].count, 1);
+        compare(slots["eDP-1"][0].active, true);
+        compare(slots["DP-1"].length, 2);
+        compare(slots["DP-1"][0].id, 30);
+        compare(slots["DP-1"][0].urgent, true);
+    }
+
+    function test_fromNiriPadsToMinimumSlots() {
+        const workspaces = [
+            { id: 1, idx: 1, output: "eDP-1", occupied: true, active: true }
+        ];
+        const outputs = [{ name: "eDP-1" }];
+        const slots = WorkspaceModel.fromNiri(workspaces, outputs, 3);
+        compare(slots["eDP-1"].length, 3);
+        compare(slots["eDP-1"][0].id, 1);
+        compare(slots["eDP-1"][1].id, 2);
+        compare(slots["eDP-1"][2].id, 3);
+        compare(slots["eDP-1"][1].count, 0);
+    }
 }
