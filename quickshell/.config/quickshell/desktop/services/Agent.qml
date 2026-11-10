@@ -46,7 +46,7 @@ Singleton {
         installer.running = true;
     }
     property string installError: ""
-    readonly property bool windowOpen: Hyprland.toplevels.values.some(t => (t.wayland?.appId || t.lastIpcObject?.class) === (herdr ? "herdr-app" : "desktop-ai"))
+    readonly property bool windowOpen: Compositor.windows.some(t => t.appId === (herdr ? "herdr-app" : "desktop-ai"))
     readonly property bool running: herdr ? windowOpen || agents.length > 0 : windowOpen
     // herdr: every terminal running a known agent, as { address, app, name, state (ready, working, permission,
     // finished, error), kind, msg, where, since }, the one needing attention first.
@@ -205,6 +205,8 @@ Singleton {
         Quickshell.execDetached(["hyprctl", "eval", "if desktop_console_hide then desktop_console_hide(" + JSON.stringify(screenName) + ") end"]);
     }
     function readMonitors() {
+        if (!Compositor.isHyprland)
+            return;
         let found = "";
         for (const monitor of Hyprland.monitors.values)
             if (monitor.lastIpcObject?.specialWorkspace?.name === "special:ai")
@@ -369,7 +371,7 @@ Singleton {
     }
     // activespecial>>WORKSPACE,MONITOR, with an empty workspace when the special one closes.
     Connections {
-        target: Hyprland
+        target: Compositor.isHyprland ? Hyprland : null
         function onRawEvent(event) {
             if (event.name !== "activespecial")
                 return;
@@ -395,7 +397,8 @@ Singleton {
         onTriggered: root.readMonitors()
     }
     Component.onCompleted: {
-        Hyprland.refreshMonitors();
+        if (Compositor.isHyprland)
+            Hyprland.refreshMonitors();
         refreshCatalog();
         herdrProbe.running = true;
     }

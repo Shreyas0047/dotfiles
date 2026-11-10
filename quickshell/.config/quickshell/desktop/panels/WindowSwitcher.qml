@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import ".."
 import "../components"
@@ -23,9 +22,9 @@ PanelWindow {
     property real earlyAt: 0
 
     function candidates() {
-        const all = Hyprland.toplevels.values.filter(t => !(t.workspace?.name ?? "").startsWith("special:"));
+        const all = Compositor.windows;
         const rank = t => {
-            const index = recent.indexOf(t.address);
+            const index = recent.indexOf(t.id);
             return index === -1 ? recent.length : index;
         };
         return all.slice().sort((a, b) => rank(a) - rank(b));
@@ -38,7 +37,7 @@ PanelWindow {
                 windows = candidates();
                 if (windows.length === 0) {
                     // Nothing to switch to: leave the submap rather than wait for the Alt release.
-                    Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.submap(\"reset\")"]);
+                    Compositor.resetSubmap();
                     return false;
                 }
                 // The first press already moves off the focused window, as everywhere else.
@@ -48,7 +47,7 @@ PanelWindow {
                     early = "";
                     return end === "commit" ? commit(selected) : true;
                 }
-                screen = ShellState.screenNamed(Hyprland.focusedMonitor?.name);
+                screen = ShellState.screenNamed(Compositor.focusedMonitorName);
                 open = true;
             } else if (windows.length > 0) {
                 selected = (selected + (action === "next" ? 1 : -1) + windows.length) % windows.length;
@@ -75,9 +74,9 @@ PanelWindow {
     function commit(index) {
         const target = windows[index];
         close();
-        if (!target?.address)
+        if (!target?.id)
             return false;
-        focusLater.address = target.address.startsWith("0x") ? target.address : "0x" + target.address;
+        focusLater.targetId = target.id;
         focusLater.restart();
         return true;
     }
@@ -102,32 +101,32 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     Connections {
-        target: Hyprland
-        function onActiveToplevelChanged() {
-            const address = Hyprland.activeToplevel?.address;
-            if (address)
-                root.recent = [address].concat(root.recent.filter(a => a !== address)).slice(0, 64);
+        target: Compositor
+        function onActiveWindowChanged() {
+            const id = Compositor.activeWindow?.id;
+            if (id)
+                root.recent = [id].concat(root.recent.filter(a => a !== id)).slice(0, 64);
         }
     }
     Timer {
         id: focusLater
-        property string address: ""
+        property var targetId: null
         interval: 60
-        onTriggered: Hyprland.dispatch("hl.dsp.focus({ window = \"address:" + address + "\" })")
+        onTriggered: Compositor.focusWindow(targetId)
     }
     // A switcher left open (the Alt release lost to a lock screen, say) commits by itself instead of staying up.
     Timer {
         id: idle
         interval: 10000
         onTriggered: {
-            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.submap(\"reset\")"]);
+            Compositor.resetSubmap();
             root.request("commit");
         }
     }
     MouseArea {
         anchors.fill: parent
         onPressed: {
-            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.submap(\"reset\")"]);
+            Compositor.resetSubmap();
             root.close();
         }
     }
@@ -205,7 +204,7 @@ PanelWindow {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.submap(\"reset\")"]);
+                            Compositor.resetSubmap();
                             root.commit(item.index);
                         }
                     }

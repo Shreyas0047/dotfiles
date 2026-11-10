@@ -1,10 +1,8 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
-import "../bar/WorkspaceModel.js" as WorkspaceModel
 
 // The floating assist button: a touch shortcut to the panels and actions of the shell. It appears with tablet
 // mode and goes away with it; a three-finger long press or `desktop-shell assist` shows or hides it at any
@@ -74,54 +72,48 @@ Singleton {
             },
             windowClose: {
                 icon: "close",
-                label: I18n.tr("assist.actions.windowClose"),
-                dispatch: "hl.dsp.window.close()"
+                label: I18n.tr("assist.actions.windowClose")
             },
             windowFullscreen: {
                 icon: "fullscreen",
-                label: I18n.tr("assist.actions.windowFullscreen"),
-                dispatch: "hl.dsp.window.fullscreen()"
+                label: I18n.tr("assist.actions.windowFullscreen")
             },
             windowFloating: {
                 icon: "pip",
-                label: I18n.tr("assist.actions.windowFloating"),
-                dispatch: "hl.dsp.window.float({ action = \"toggle\" })"
+                label: I18n.tr("assist.actions.windowFloating")
             },
             windowLeft: {
                 icon: "arrow-left",
-                label: I18n.tr("assist.actions.windowLeft"),
-                dispatch: "hl.dsp.window.move({ direction = \"left\" })"
+                label: I18n.tr("assist.actions.windowLeft")
             },
             windowRight: {
                 icon: "arrow-right",
-                label: I18n.tr("assist.actions.windowRight"),
-                dispatch: "hl.dsp.window.move({ direction = \"right\" })"
+                label: I18n.tr("assist.actions.windowRight")
             },
             windowToPrevious: {
                 icon: "chevron-left",
-                label: I18n.tr("assist.actions.windowToPrevious"),
-                dispatch: "hl.dsp.window.move({ workspace = \"r-1\" })"
+                label: I18n.tr("assist.actions.windowToPrevious")
             },
             windowToNext: {
                 icon: "chevron-right",
-                label: I18n.tr("assist.actions.windowToNext"),
-                dispatch: "hl.dsp.window.move({ workspace = \"r+1\" })"
+                label: I18n.tr("assist.actions.windowToNext")
             },
             windowSplit: {
                 icon: "split",
                 label: I18n.tr("assist.actions.windowSplit"),
+                available: Compositor.isHyprland,
                 dispatch: "hl.dsp.layout(\"togglesplit\")"
             },
             screenshotArea: {
                 icon: "screenshot",
                 label: I18n.tr("assist.actions.screenshotArea"),
-                available: Installed.has("plugins", "hyprcapture"),
+                available: Compositor.isHyprland && Installed.has("plugins", "hyprcapture"),
                 lua: "local capture = (hl.plugin or {}).hyprcapture if capture then capture.open_editor(\"region\") end"
             },
             screenshotDisplay: {
                 icon: "monitor",
                 label: I18n.tr("assist.actions.screenshotDisplay"),
-                available: Installed.has("plugins", "hyprcapture"),
+                available: Compositor.isHyprland && Installed.has("plugins", "hyprcapture"),
                 lua: "local capture = (hl.plugin or {}).hyprcapture if capture then capture.open_editor(\"fullscreen\") end"
             },
             recording: {
@@ -237,7 +229,7 @@ Singleton {
             return true;
         }
         if (action?.dispatch) {
-            Hyprland.dispatch(action.dispatch);
+            Compositor.dispatch(action.dispatch);
             return true;
         }
         if (action?.exec) {
@@ -263,12 +255,25 @@ Singleton {
             Dock.request(Tablet.active ? "touch" : "toggle");
         else if (name === "overview") {
             BarVisibility.wake();
-            Quickshell.execDetached(["hyprctl", "eval", "local overview = (hl.plugin or {}).overview if overview then overview.toggle() end"]);
-        }
-        else if (name === "workspacePrevious" || name === "workspaceNext")
+            Compositor.toggleOverview();
+        } else if (name === "workspacePrevious" || name === "workspaceNext")
             stepWorkspace(name === "workspaceNext" ? 1 : -1);
         else if (name === "rotationLock")
             Tablet.requestLock("toggle");
+        else if (name === "windowClose")
+            Compositor.closeWindow(Compositor.activeWindow?.id);
+        else if (name === "windowFullscreen")
+            Compositor.toggleFullscreen();
+        else if (name === "windowFloating")
+            Compositor.toggleFloating();
+        else if (name === "windowToPrevious")
+            Compositor.stepWindowWorkspace(-1);
+        else if (name === "windowToNext")
+            Compositor.stepWindowWorkspace(1);
+        else if (name === "windowLeft")
+            Compositor.moveWindowInDirection("left");
+        else if (name === "windowRight")
+            Compositor.moveWindowInDirection("right");
         else
             return false;
         return true;
@@ -276,14 +281,15 @@ Singleton {
     // One slot along the workspaces of the focused monitor, empty ones included, stopping at either end:
     // unlike scrolling over the bar, it never opens a new workspace.
     function stepWorkspace(direction) {
-        const monitor = Hyprland.focusedMonitor;
-        if (!monitor)
+        const monitorName = Compositor.focusedMonitorName;
+        if (!monitorName)
             return;
-        const slots = WorkspaceModel.fromHyprland(Hyprland, Config.minimumWorkspaces)[monitor.name] || [];
-        const current = slots.findIndex(w => w.id === monitor.activeWorkspace?.id);
+        const slots = Compositor.workspaceSlots[monitorName] || [];
+        const activeId = Compositor.activeWorkspaceId(monitorName);
+        const current = slots.findIndex(w => w.id === activeId);
         const next = current + direction;
         if (current >= 0 && next >= 0 && next < slots.length)
-            Hyprland.dispatch("hl.dsp.focus({ workspace = " + slots[next].id + " })");
+            Compositor.focusWorkspace(slots[next].id, monitorName);
     }
     // Lets the menu leave the screen before a screenshot editor captures it.
     Timer {

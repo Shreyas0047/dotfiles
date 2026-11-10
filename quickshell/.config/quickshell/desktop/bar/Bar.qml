@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.SystemTray
@@ -33,12 +32,10 @@ PanelWindow {
         id: cornerInput
         item: corner
     }
-    readonly property var monitor: Hyprland.monitorFor(screen)
-    readonly property var workspaceSlots: WorkspaceModel.fromHyprland(Hyprland, Config.minimumWorkspaces)
+    readonly property var workspaceSlots: Compositor.workspaceSlots
     readonly property var workspaces: workspaceSlots[screen.name] || []
     function focusWorkspace(id) {
-        Hyprland.dispatch("hl.dsp.focus({ monitor = " + JSON.stringify(screen.name) + " })");
-        Hyprland.dispatch("hl.dsp.focus({ workspace = " + id + " })");
+        Compositor.focusWorkspace(id, screen.name);
     }
     readonly property int battery: Math.round((UPower.displayDevice?.percentage ?? 0) * 100)
     // The distribution logo: the icon that os-release names (Fedora has one in the icon theme), else the icon
@@ -150,7 +147,7 @@ PanelWindow {
         WorkspaceStrip {
             Layout.fillHeight: true
             workspaces: bar.workspaces
-            activeId: bar.monitor?.activeWorkspace?.id ?? -1
+            activeId: Compositor.activeWorkspaceId(bar.screen.name)
             newId: WorkspaceModel.newId(bar.workspaceSlots, bar.screen.name)
             scrollEnabled: Config.workspaceScroll
             onActivated: id => bar.focusWorkspace(id)
@@ -159,9 +156,9 @@ PanelWindow {
         // before the title and opens the same menu with a tap.
         BarButton {
             id: windowButton
-            visible: (bar.width <= 1100 || Tablet.active) && Hyprland.activeToplevel !== null
-            iconSource: Quickshell.iconPath(DesktopEntries.heuristicLookup(Hyprland.activeToplevel?.wayland?.appId ?? "")?.icon ?? "", "application-x-executable")
-            tooltip: Hyprland.activeToplevel?.title ?? ""
+            visible: (bar.width <= 1100 || Tablet.active) && Compositor.activeWindow !== null
+            iconSource: Quickshell.iconPath(DesktopEntries.heuristicLookup(Compositor.activeWindow?.appId ?? "")?.icon ?? "", "application-x-executable")
+            tooltip: Compositor.activeWindow?.title ?? ""
             onClicked: windowMenu.popup(this, 0, bar.height)
             Accessible.name: I18n.tr("windowMenu.title")
         }
@@ -170,7 +167,7 @@ PanelWindow {
             Layout.fillWidth: true
             Layout.minimumWidth: 0
             Layout.leftMargin: 12
-            text: Hyprland.activeToplevel?.title ?? I18n.tr("bar.desktop")
+            text: Compositor.activeWindow?.title ?? I18n.tr("bar.desktop")
             elide: Text.ElideRight
             textFormat: Text.PlainText
             color: BarStyle.muted
@@ -182,7 +179,7 @@ PanelWindow {
             MouseArea {
                 width: Math.min(parent.width, parent.paintedWidth)
                 height: parent.height
-                enabled: Hyprland.activeToplevel !== null
+                enabled: Compositor.activeWindow !== null
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 pressAndHoldInterval: 500
                 onPressAndHold: windowMenu.popup(windowTitle, 0, bar.height)

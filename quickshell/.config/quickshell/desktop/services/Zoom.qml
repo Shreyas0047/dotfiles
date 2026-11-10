@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import ".."
 
 // Screen zoom around the pointer (Hyprland cursor:zoom_factor), in steps of a quarter, from 100% to 800%.
@@ -10,8 +9,10 @@ Singleton {
     id: root
     property real factor: 1
     function set(value) {
+        if (!Compositor.hasCapability("cursorZoom"))
+            return;
         factor = Math.round(Math.max(1, Math.min(8, value)) * 100) / 100;
-        Hyprland.dispatch("hl.config({ cursor = { zoom_factor = " + factor + " } })");
+        Compositor.dispatch("hl.config({ cursor = { zoom_factor = " + factor + " } })");
         Osd.showState("zoom", I18n.tr("zoom.title"), Math.round(factor * 100) + "%");
     }
     // IPC, the shortcuts and the assist button: in, out, reset, toggle (100% and 200%).

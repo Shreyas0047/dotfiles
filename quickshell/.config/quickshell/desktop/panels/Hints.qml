@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Io
-import Quickshell.Hyprland
 import ".."
 import "../services"
 import "../components"
@@ -118,9 +117,9 @@ Overlay {
             reader.running = true;
     }
     Connections {
-        target: Hyprland
-        function onRawEvent(event) {
-            if (event.name === "configreloaded" && root.visible)
+        target: Compositor
+        function onConfigReloaded() {
+            if (root.visible)
                 root.refreshBindings();
         }
     }

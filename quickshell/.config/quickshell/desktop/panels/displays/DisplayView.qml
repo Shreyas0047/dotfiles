@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import "../.."
 import "../../components"
@@ -37,9 +36,9 @@ ColumnLayout {
     Component.onCompleted: if (shown)
         update()
     Connections {
-        target: Hyprland
-        function onRawEvent(event) {
-            if (root.shown && (event.name === "monitoraddedv2" || event.name === "monitorremovedv2" || event.name === "monitoradded" || event.name === "monitorremoved"))
+        target: Compositor
+        function onMonitorsChanged() {
+            if (root.shown)
                 refresh.restart();
         }
     }

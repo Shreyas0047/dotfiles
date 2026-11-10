@@ -1,8 +1,8 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import ".."
 import "../components"
+import "../services"
 
 // Actions on the active window, from a long press or right click on its title in the bar (or on the app
 // button that replaces the title on a narrow bar): touch has no Super+Q, Super+Shift+F or Super+V.
@@ -11,10 +11,10 @@ MenuLayer {
     property point origin: Qt.point(0, 0)
     onDismissRequested: dismiss()
     function popup(item, x, y) {
-        if (!Hyprland.activeToplevel)
+        if (!Compositor.activeWindow)
             return;
         // lastIpcObject (floating) is only filled by a refresh; the entries follow when it arrives.
-        Hyprland.refreshToplevels();
+        Compositor.refreshToplevels();
         origin = item.mapToItem(item.QsWindow.window.contentItem, x, y);
         visible = true;
         Qt.callLater(() => menu.forceActiveFocus());
@@ -22,34 +22,31 @@ MenuLayer {
     function dismiss() {
         visible = false;
     }
-    function dispatch(command) {
-        Hyprland.dispatch(command);
-    }
     function entries() {
-        const window = Hyprland.activeToplevel;
+        const window = Compositor.activeWindow;
         if (!window)
             return [];
         return [
             {
                 kind: "heading",
-                text: window.title || window.wayland?.appId || ""
+                text: window.title || window.appId || ""
             },
             {
                 text: I18n.tr("windowMenu.fullscreen"),
-                action: () => root.dispatch("hl.dsp.window.fullscreen()")
+                action: () => Compositor.toggleFullscreen()
             },
             {
                 text: I18n.tr("windowMenu.floating"),
-                checked: window.lastIpcObject?.floating === true,
-                action: () => root.dispatch("hl.dsp.window.float({ action = \"toggle\" })")
+                checked: window.isFloating === true,
+                action: () => Compositor.toggleFloating()
             },
             {
                 text: I18n.tr("windowMenu.movePrevious"),
-                action: () => root.dispatch("hl.dsp.window.move({ workspace = \"r-1\" })")
+                action: () => Compositor.stepWindowWorkspace(-1)
             },
             {
                 text: I18n.tr("windowMenu.moveNext"),
-                action: () => root.dispatch("hl.dsp.window.move({ workspace = \"r+1\" })")
+                action: () => Compositor.stepWindowWorkspace(1)
             },
             {
                 kind: "separator"
@@ -57,7 +54,7 @@ MenuLayer {
             {
                 text: I18n.tr("windowMenu.close"),
                 destructive: true,
-                action: () => window.wayland?.close()
+                action: () => Compositor.closeWindow(window.id)
             }
         ];
     }

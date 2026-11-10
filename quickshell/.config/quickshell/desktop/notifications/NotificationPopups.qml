@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import ".."
@@ -9,7 +8,7 @@ import "NotificationDeck.js" as NotificationDeck
 
 PanelWindow {
     id: root
-    screen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) || Quickshell.screens[0]
+    screen: ShellState.screenNamed(Compositor.focusedMonitorName)
     anchors {
         top: true
         right: true

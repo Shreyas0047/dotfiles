@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Polkit
@@ -74,7 +73,7 @@ Scope {
         id: agent
         onAuthenticationRequestStarted: {
             root.forgetPassword();
-            root.promptScreen = ShellState.screenNamed(Hyprland.focusedMonitor?.name);
+            root.promptScreen = ShellState.screenNamed(Compositor.focusedMonitorName);
             ShellState.close();
         }
         onIsActiveChanged: if (!isActive && root.passwordChosen)

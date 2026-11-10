@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import ".."
 import "../services"
@@ -8,14 +7,13 @@ import "DockModel.js" as DockModel
 
 PanelWindow {
     id: root
-    readonly property var monitor: Hyprland.monitorFor(screen)
-    readonly property var workspace: monitor?.activeWorkspace ?? null
     // Hyprspace fades Top layers like the bar; keep the surface mapped but out of the way.
     readonly property bool compositorHidden: BarVisibility.hidden(screen.name)
-    readonly property bool fullscreen: workspace?.hasFullscreen ?? false
+    readonly property bool fullscreen: Compositor.isWorkspaceFullscreen(screen.name)
     // A focused special-workspace window (the AI assistant) covers an empty workspace.
-    readonly property bool specialFocused: Hyprland.activeToplevel?.activated === true && Hyprland.activeToplevel.monitor === monitor && (Hyprland.activeToplevel.workspace?.name ?? "").startsWith("special:")
-    readonly property bool emptyWorkspace: workspace !== null && workspace.toplevels.values.length === 0 && !specialFocused
+    readonly property bool specialFocused: Compositor.activeWindow?.isActivated === true && Compositor.activeWindow?.monitorName === screen.name && (Compositor.activeWindow?.workspaceName ?? "").startsWith("special:")
+    readonly property var activeSlot: (Compositor.workspaceSlots[screen.name] ?? []).find(s => s.id === Compositor.activeWorkspaceId(screen.name))
+    readonly property bool emptyWorkspace: (activeSlot?.count ?? 1) === 0 && !specialFocused
     readonly property var request: Dock.requested[screen.name]
     // Mapped again after a rotation (services/Tablet.qml).
     visible: !Tablet.remaps(screen.name)

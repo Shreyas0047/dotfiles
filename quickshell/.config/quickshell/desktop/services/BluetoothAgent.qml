@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -60,7 +59,7 @@ Singleton {
                         root.registered = data.registered;
                         root.error = data.error || "";
                     } else if (data.type === "prompt") {
-                        root.promptScreen = ShellState.screenNamed(Hyprland.focusedMonitor?.name);
+                        root.promptScreen = ShellState.screenNamed(Compositor.focusedMonitorName);
                         root.prompt = data.prompt;
                     } else if (data.type === "error") {
                         root.error = data.error;

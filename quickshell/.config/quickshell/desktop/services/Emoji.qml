@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -31,20 +30,20 @@ Singleton {
             SessionState.set("emojiRecent", [character].concat(recent.filter(e => e !== character)).slice(0, 24).join(" "));
             return;
         }
-        target = Hyprland.activeToplevel?.address ?? "";
+        target = Compositor.activeWindow?.id ?? "";
     }
     function pick(character) {
         remember(character);
         Quickshell.execDetached(["wl-copy", "--", character]);
         ShellState.close();
-        if (target !== "")
+        if (target !== "" && Compositor.hasCapability("sendShortcut"))
             clients.running = true;
     }
     // Pasted into the window focused now, with no panel to close (the on-screen keyboard takes no focus).
     function insert(character) {
-        target = Hyprland.activeToplevel?.address ?? "";
+        target = Compositor.activeWindow?.id ?? "";
         Quickshell.execDetached(["wl-copy", "--", character]);
-        if (target !== "")
+        if (target !== "" && Compositor.hasCapability("sendShortcut"))
             clients.running = true;
     }
     // The pid of the target window from Hyprland (the toplevel's IPC data can still be empty for a new window),
@@ -77,9 +76,11 @@ Singleton {
         id: paste
         interval: 120
         onTriggered: {
-            const address = root.target.startsWith("0x") ? root.target : "0x" + root.target;
-            const terminal = root.terminals.some(name => process.name.startsWith(name));
-            Hyprland.dispatch("hl.dsp.send_shortcut({ mods = \"" + (terminal ? "CTRL SHIFT" : "CTRL") + "\", key = \"V\", window = \"address:" + address + "\" })");
+            if (Compositor.isHyprland) {
+                const address = root.target.startsWith("0x") ? root.target : "0x" + root.target;
+                const terminal = root.terminals.some(name => process.name.startsWith(name));
+                Compositor.dispatch("hl.dsp.send_shortcut({ mods = \"" + (terminal ? "CTRL SHIFT" : "CTRL") + "\", key = \"V\", window = \"address:" + address + "\" })");
+            }
         }
     }
     Process {

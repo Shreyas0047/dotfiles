@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -42,8 +41,8 @@ Singleton {
             };
             result.push(byKey[entry.id]);
         }
-        for (const toplevel of Hyprland.toplevels.values) {
-            const appId = appIdOf(toplevel);
+        for (const window of Compositor.windows) {
+            const appId = appIdOf(window);
             if (appId === "" || hiddenApps.includes(appId))
                 continue;
             // Window classes rarely equal desktop-entry IDs (zen → zen-browser).
@@ -59,14 +58,14 @@ Singleton {
                 };
                 result.push(byKey[key]);
             }
-            byKey[key].toplevels.push(toplevel);
+            byKey[key].toplevels.push(window);
         }
         const firstRunning = result.findIndex(item => !item.pinned);
         return result.map((item, index) => Object.assign(item, {
                 separatorBefore: index > 0 && index === firstRunning,
                 running: item.toplevels.length > 0,
-                active: item.toplevels.some(t => t.activated),
-                urgent: item.toplevels.some(t => t.urgent)
+                active: item.toplevels.some(t => t.isActivated),
+                urgent: item.toplevels.some(t => t.isUrgent)
             }));
     }
     readonly property var urgentKeys: items.filter(item => item.urgent).map(item => item.key)
@@ -98,11 +97,11 @@ Singleton {
     // The assistant console has its own icon in the bar (services/Agent.qml): neither its pin nor its
     // window shows in the dock.
     readonly property var hiddenApps: ["desktop-ai"]
-    function appIdOf(toplevel) {
-        return toplevel.wayland?.appId || toplevel.lastIpcObject?.class || "";
+    function appIdOf(window) {
+        return window?.appId ?? "";
     }
     function focusedName() {
-        return Hyprland.focusedMonitor?.name ?? "";
+        return Compositor.focusedMonitorName;
     }
     function assigned(map, name, value) {
         const copy = Object.assign({}, map);
@@ -163,18 +162,19 @@ Singleton {
             return;
         }
         const windows = item.toplevels;
-        const current = windows.findIndex(t => t.activated);
+        const current = windows.findIndex(t => t.isActivated);
         // A second click on the focused app cycles through its windows.
         const target = current === -1 ? preferred(windows) : windows[(current + 1) % windows.length];
-        if (target.wayland)
-            target.wayland.activate();
-        else if (target.workspace)
-            Hyprland.dispatch("hl.dsp.focus({ workspace = " + target.workspace.id + " })");
+        if (target.activate)
+            target.activate();
+        else
+            Compositor.focusWindow(target.id);
     }
     // Prefer a window already visible on the focused monitor so focusing does not switch workspaces.
     function preferred(windows) {
-        const workspace = Hyprland.focusedMonitor?.activeWorkspace;
-        return windows.find(t => t.workspace === workspace) ?? windows[0];
+        const mon = Compositor.focusedMonitorName;
+        const currentWsId = Compositor.activeWorkspaceId(mon);
+        return windows.find(t => t.monitorName === mon && t.workspaceId === currentWsId) ?? windows[0];
     }
     function launchNew(item) {
         if (item.entry)
@@ -193,8 +193,8 @@ Singleton {
             if (previousUrgent.includes(key))
                 continue;
             const item = items.find(i => i.key === key);
-            const window = item?.toplevels.find(t => t.urgent);
-            peek(window?.monitor?.name ?? focusedName(), 3000);
+            const window = item?.toplevels.find(t => t.isUrgent);
+            peek(window?.monitorName ?? focusedName(), 3000);
         }
         previousUrgent = urgentKeys;
     }

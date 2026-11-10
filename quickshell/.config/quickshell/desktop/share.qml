@@ -5,7 +5,6 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import "."
 import "components"
 import "services"
@@ -38,7 +37,7 @@ ShellRoot {
     }
     PanelWindow {
         id: panel
-        screen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) || Quickshell.screens[0]
+        screen: ShellState.screenNamed(Compositor.focusedMonitorName)
         anchors {
             top: true
             bottom: true

@@ -2,7 +2,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
 import Quickshell.Services.UPower
 import Quickshell.Networking
 import Quickshell.Bluetooth
@@ -107,7 +106,7 @@ ShellRoot {
         }
         // The desktop menu in the middle of the focused monitor.
         function desktopMenu(): void {
-            ShellState.desktopMenuRequested(Hyprland.focusedMonitor?.name ?? "");
+            ShellState.desktopMenuRequested(Compositor.focusedMonitorName);
         }
         // Opens Settings on a section (appearance, …), or toggles it with none.
         function settings(section: string): void {
@@ -137,7 +136,7 @@ ShellRoot {
                 panel: ShellState.panel,
                 language: I18n.language,
                 screens: Quickshell.screens.length,
-                workspace: Hyprland.focusedWorkspace?.id ?? -1,
+                workspace: Compositor.focusedWorkspaceId,
                 volume: Audio.volume,
                 muted: Audio.muted,
                 audioOutputs: Audio.outputs.length,
@@ -216,7 +215,7 @@ ShellRoot {
                 },
                 workspaces: Quickshell.screens.map(s => ({
                             monitor: s.name,
-                            active: Hyprland.monitorFor(s)?.activeWorkspace?.id
+                            active: Compositor.activeWorkspaceId(s.name)
                         })),
                 quiet: Notices.quiet,
                 tablet: {

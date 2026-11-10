@@ -1,7 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import "services"
 
 Singleton {
     id: root
@@ -11,7 +11,7 @@ Singleton {
     // Opens the desktop menu in the middle of that monitor (IPC; the desktop itself opens it at the pointer).
     signal desktopMenuRequested(string screenName)
     function requestWindowMenu() {
-        windowMenuRequested(Hyprland.focusedMonitor?.name ?? "");
+        windowMenuRequested(Compositor.focusedMonitorName);
     }
     property var activeScreen: null
     // What panels keep between openings while they are unloaded (components/LazyPanel.qml): expanded sections,
@@ -63,7 +63,7 @@ Singleton {
             return;
         // Set before the panel changes so both the closing and the opening panel read the same direction.
         navigation = direction ?? 0;
-        activeScreen = screen || screenNamed(Hyprland.focusedMonitor?.name);
+        activeScreen = screen || screenNamed(Compositor.focusedMonitorName);
         panel = panel === name ? "" : name;
     }
     // Opens a panel on one of its sections, or moves it there when it is open on another. With toggle, asking
@@ -82,7 +82,7 @@ Singleton {
             return;
         }
         navigation = 0;
-        activeScreen = screen || screenNamed(Hyprland.focusedMonitor?.name);
+        activeScreen = screen || screenNamed(Compositor.focusedMonitorName);
         panel = name;
     }
     function screenNamed(name) {

@@ -51,5 +51,7 @@ if command -v lua >/dev/null; then
     lua "$repo/scripts/tests/test_installed.lua"
     rm -rf "$state"
 fi
-XDG_CONFIG_HOME="$repo/hypr/.config" Hyprland --verify-config -c "$repo/hypr/.config/hypr/hyprland.lua"
+if command -v Hyprland >/dev/null; then
+    XDG_CONFIG_HOME="$repo/hypr/.config" Hyprland --verify-config -c "$repo/hypr/.config/hypr/hyprland.lua"
+fi
 printf '\nTo check QML in the session: qs -p "%s/quickshell/.config/quickshell/desktop"\n' "$repo"

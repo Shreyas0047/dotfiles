@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import ".."
@@ -37,14 +36,12 @@ Singleton {
         objects: root.recorders.concat(root.videoStreams)
     }
     Connections {
-        target: Hyprland
-        // screencast>>STATE,OWNER: 1 when a share starts, 0 when it stops. A screencopy client such as
+        target: Compositor
+        // screencast state: true when a share starts, false when it stops. A screencopy client such as
         // wf-recorder sends both for every frame it copies, so "off" waits for screencastEnd: the icon stays
         // on through a recording instead of flickering with each frame.
-        function onRawEvent(event) {
-            if (event.name !== "screencast")
-                return;
-            if (event.data.split(",")[0] === "1") {
+        function onScreencastChanged(active) {
+            if (active) {
                 screencastEnd.stop();
                 root.screencast = true;
             } else {

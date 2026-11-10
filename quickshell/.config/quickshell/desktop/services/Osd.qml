@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import ".."
 
 Singleton {
@@ -36,7 +35,7 @@ Singleton {
     function show(type, level, isMuted, description, monitorName) {
         if (!Config.osdEnabled || suppressed(type) || !Number.isFinite(level))
             return;
-        const screen = ShellState.screenNamed(monitorName || Hyprland.focusedMonitor?.name);
+        const screen = ShellState.screenNamed(monitorName || Compositor.focusedMonitorName);
         if (!screen)
             return;
         targetScreen = screen;
@@ -54,7 +53,7 @@ Singleton {
     function showState(icon, heading, state) {
         if (!Config.osdEnabled)
             return;
-        const screen = ShellState.screenNamed(Hyprland.focusedMonitor?.name);
+        const screen = ShellState.screenNamed(Compositor.focusedMonitorName);
         if (!screen)
             return;
         targetScreen = screen;

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
+import "../services"
 
 // The full-screen layer of a menu (tray, window, dock), so the menu can extend beyond the bar or the dock,
 // grab the keyboard and close on any outside press: dismissRequested comes from a press outside the menu
@@ -28,10 +28,13 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "desktop-tray-menu"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    HyprlandFocusGrab {
-        active: root.visible
-        windows: [root]
-        onCleared: root.dismissRequested()
+    Loader {
+        active: Compositor.isHyprland
+        source: "../services/compositors/HyprlandFocusGrab.qml"
+        onLoaded: {
+            item.targetWindow = root;
+            item.cleared.connect(root.dismissRequested);
+        }
     }
     MouseArea {
         anchors.fill: parent
